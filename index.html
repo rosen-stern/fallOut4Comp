@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>ROBOTO LLC Computer Terminal</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+    
+    *{
+        background-color: black;
+        color:greenyellow;
+        font-family: 'VT323', monospace;
+    }
+    
+    span{
+        
+    }
+    
+    span:hover {
+     background-color:greenyellow;
+        color: darkgreen;
+    }
+    
+    #computer{
+        display: flex;
+        margin-top: 20px;
+    }
+    
+    #computerscreen, #computeroutput{
+        width: 45%;
+        margin: 5px;
+        overflow-x: visible;
+        word-break: break-all;
+    }
+    
+</style>
+
+<body>
+
+<div>
+Welcome to ROBOTOCO LLC (TM) Termlink <br>
+
+Password required <br>
+
+Attempts Remaining: <span id="attemptsRemaining">....</span>
+</div>
+
+<div id="computer">
+    <div id="computerscreen">
+    </div>
+
+    <div id="computeroutput">
+    </div>
+</div>
+
+<script>
+
+        attempts = totalAttempts = 4;
+        unlocked = false;
+        lockedOut = false;
+
+        var charArray = ["!","*","%","#","$","@","^","&","[","]",":","_","=","}","{","/","`","+","-","<",">",";",",","?"];
+    
+        //words from real terminal in the game:
+        var words = ["spies","joins","tires","trick","tried","skies","terms","third","fries","price","trite","tries","tanks","thick","tribe","texas"];
+        wordsTempArray = words;//so the word array itself isn't erased... not rly necessary but i dont wanna change it incase it breaks something lol
+
+
+    /*  -------------------- SET UP -------------------- */
+        var wordsOnScreen= [];
+        wordCount = 16; //how many words appear on the screen
+        for(var i = 0; i < wordCount; i++){
+            var wordTemp = wordsTempArray.splice(Math.floor(Math.random()*wordsTempArray.length), 1);
+            wordTemp = wordTemp.toString().toUpperCase();
+            wordsOnScreen[i] = new somethingOnScreen("word",wordTemp.toUpperCase());
+        }
+        //pick the actual password
+        var key = Math.floor(Math.random() * wordsOnScreen.length);
+
+        var charsOnScreen = [];
+        var charsCount = 300; //how many random chars are on the screen
+            for(var i = 0; i < charsCount; i++){
+            charsOnScreen[i] = new somethingOnScreen("char", charArray[Math.floor(Math.random() * charArray.length)]);   
+        }
+
+        var specialCharsOnScreen = [];
+        var usedSpecialChars = []; //array of indexes of the special chars already used
+        var specialCharsCount = 5; //how many special chars are on the screen; what the chars do is randomly determined when they're clicked
+        for(var i = 0; i < specialCharsCount; i++){
+            specialCharsOnScreen[i] = new somethingOnScreen("specialChar", "["+charArray[Math.floor(Math.random() * charArray.length)]+"]");
+        }
+
+
+        var finalOnScreen = []; //array that's just the 3 previous arrays combined so they can be shuffled
+
+        //combining the 3 previous arrays in order
+        for(var i = 0; i < wordsOnScreen.length + charsOnScreen.length + specialCharsOnScreen.length; i++){
+        if(i < wordsOnScreen.length){
+            finalOnScreen[i] = wordsOnScreen[i];
+        } else if(i < wordsOnScreen.length+charsOnScreen.length){
+            finalOnScreen[i] = charsOnScreen[i-wordsOnScreen.length];
+        } else{
+            finalOnScreen[i] = specialCharsOnScreen[i-(wordsOnScreen.length+charsOnScreen.length)];
+        }
+
+        }
+
+        shuffle(finalOnScreen); //just giving it a good mixup
+
+        //add a char after each word so no two words are right next to each other
+        //thank u tony for the suggestion
+        for(var i = 0; i < finalOnScreen.length; i++){
+            if(finalOnScreen[i].type == "word"){
+                finalOnScreen.splice(i+1,0, new somethingOnScreen("char", charArray[Math.floor(Math.random() * charArray.length)]));
+                i++;
+            }
+        }
+
+/*  -------------------- ON LOAD -------------------- */   
+    
+    window.onload = (event) => {
+            displayFinalOnScreen();
+    };
+    
+/*  -------------------- FUNCTIONS -------------------- */
+    //object for something on the screen
+    function somethingOnScreen(type,display) {
+        //used for the <span> class in HTML
+        this.type = type; //eg. "word" "char" "specialChar"
+        this.display = display; //the actual text string
+    }
+
+    function displayOnScreen(text){
+        document.getElementById("computeroutput").innerHTML += ">" + text + "<br>";
+    }
+      
+    function check(text){
+        
+        displayOnScreen("");
+        
+        likeness = getLikeness(wordsOnScreen[key].display,text.toUpperCase());
+
+        if(!unlocked && !lockedOut){ //make sure player hasn't already solved or failed
+            
+            displayOnScreen(text); //show word they clicked on in right-hand display
+            
+            if(text == wordsOnScreen[key].display){
+                displayOnScreen("Key found!");
+                displayOnScreen("Computer unlocked.");
+                displayOnScreen("Refresh page to play again.");
+                unlocked = true;
+            } else {
+                attempts--;
+                updateAttempts();
+                
+                if(attempts > 0){
+                    displayOnScreen("Incorrect.");
+                    displayOnScreen("Likeness: " + likeness);
+                
+                } else {
+                    displayOnScreen("Incorrect.");
+                    displayOnScreen("No more tries.");
+                    displayOnScreen("Correct key: " + wordsOnScreen[key].display);
+                    displayOnScreen("Refresh page to play again.");
+                    
+                    lockedOut = true;
+                }
+            }
+        }
+        
+
+    }
+    
+    function getLikeness(text1, text2){
+        likeness = 0;
+        for(var i = 0; i < text1.length; i++){
+            if(i < text2.length){
+                if(text2.charAt(i) == text1.charAt(i)){
+                    likeness++;
+                }
+            }
+        }
+        return likeness;
+    }
+    
+    function updateAttempts(){
+        document.getElementById("attemptsRemaining").innerHTML = "";
+            for(var x = 0; x < attempts; x++){
+                document.getElementById("attemptsRemaining").innerHTML += "."; 
+            }
+    }
+    
+    function useSpecialChar(index){
+
+        if(!isInArray(index, usedSpecialChars)){//if player hasn't already clicked on the special char
+
+            usedSpecialChars.push(index);//add to array of used special chars indexes so it can't be used again
+
+            switch (Math.floor(Math.random() * 3)){//randomly assign the special char's powers
+                case 1:
+                    attempts = totalAttempts;
+                    updateAttempts();
+                    displayOnScreen("Attempts reset.");
+                    break;
+                default:
+                    removeDud();
+                    displayOnScreen("Dud removed.");
+
+            }
+
+        }
+
+    }
+
+    function removeDud(){
+        wordIndexes = [];
+        for(var i = 0; i < finalOnScreen.length; i++){ //find all the words still displayed on the screen
+            if(finalOnScreen[i].type == "word"){
+              if(finalOnScreen[i].display != wordsOnScreen[key].display){ //find all the words that aren't the key
+                 wordIndexes.push(i);//save to an array of indexes
+                 }
+            }
+        }
+        
+        randomWordIndex = wordIndexes[Math.floor(Math.random() * wordIndexes.length)]; //randomly pick a dud to delete
+        newDudReplace = finalOnScreen[randomWordIndex].display; //save it as a separate string for ease of use
+    
+        for(var i = 0; i < newDudReplace.length; i++){ //cycle through the chars in the string to replace
+        newDudReplace = setCharAt(newDudReplace,i,charArray[Math.floor(Math.random() * charArray.length)]); //replace each char in the word with a random char to "remove" it from the display 
+        }
+        
+        finalOnScreen[randomWordIndex].display = newDudReplace; //set the newly replaced dud string to the actual string in the array
+        
+        finalOnScreen[randomWordIndex].type = "dud"; //change the type so it can't be mistaken next time a dud is removed (see line 219)
+        
+        displayFinalOnScreen();//re-display the FinalOnScreen array with the newly changed dud text
+    }
+    
+    //https://stackoverflow.com/questions/1431094/how-do-i-replace-a-character-at-a-particular-index-in-javascript
+    function setCharAt(str,index,chr) {
+        if(index > str.length-1) return str;
+        return str.substring(0,index) + chr + str.substring(index+1);
+    }
+    
+    function displayFinalOnScreen(){
+        fullComputer = document.getElementById("computerscreen");
+        fullComputer.innerHTML = "";
+        for(var i = 0; i < finalOnScreen.length; i++){
+            if(finalOnScreen[i].type == "word"){
+                fullComputer.innerHTML += "<span class=\"" + finalOnScreen[i].type + "\" onClick=\"check('" +finalOnScreen[i].display + "');\">" + finalOnScreen[i].display + "</span>";    
+            } else if(finalOnScreen[i].type == "specialChar"){
+                fullComputer.innerHTML += "<span class=\"" + finalOnScreen[i].type + "\" onClick=\"useSpecialChar(" + i + ");\">" + finalOnScreen[i].display + "</span>";    
+            } else {
+                fullComputer.innerHTML += "<span class=\"" + finalOnScreen[i].type + "\">" + finalOnScreen[i].display + "</span>";
+            }
+        }
+    }
+    
+    function isInArray(item, array){
+        for(var i = 0; i < array.length; i++){
+            if(array[i] == item){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    //https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+    function shuffle(array) {
+      var currentIndex = array.length,  randomIndex;
+
+      // While there remain elements to shuffle...
+      while (0 !== currentIndex) {
+        // Pick a remaining element...
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        // And swap it with the current element.
+        [array[currentIndex], array[randomIndex]] = [
+          array[randomIndex], array[currentIndex]];
+      }
+      return array;
+    }
+
+        //https://www.reddit.com/r/Fallout/comments/75ma3j/all_possible_words_in_the_hacking_minigame_found/
+        //https://pastebin.com/acmgBxyt
+        //Words from 3rd grade spelling list:
+        //var words = ["high","every","near","west","dress","next","else","checked","grand","stand","am","matter","forums","value","area","save","school","father","mother","keep","safe","grade","reached","raise","theme","scream","easy","batteries","fuel","iron","solve","science","upon","thought","gun","strong","story","burst","strip","stream","street","distance","least","hundreds","east","object","sum","difference","along","bought","close","something","seem","laughed","lady","enough","graph","paragraph","photograph","particle","atom","element","property","decimal","between","own","base","country","plant","slip","lunch","pond","front","thump","inches","yard","stored","motion","expand","calculate","trade","start","city","earth","hope","despair","follow","stone","throw","follow","broke","sign","tiny","whole","waves","current","electric","digit","round","cried","dried","milk","while","known","knife","wrong","knot","wrinkle","wrap","wrist","knee","product","quotient","cloud","child","open","example","being","begin","chance","match","watch","batch","steel","speech","source","direction","travel","women","demonstrate"];
+
+</script>
+    </body>
+</html>
